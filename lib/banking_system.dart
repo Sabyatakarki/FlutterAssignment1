@@ -1,11 +1,11 @@
-// banking_system.dart
-//OOP in Dart: Encapsulation, Inheritance, Polymorphism, Abstraction
+//Assignment od dart : banking system
 
-// Abstract class BankAccount
+
+//Encapsulation
 abstract class BankAccount {
-  String _accountNumber;
-  String _accountHolderName;
-  double _balance;
+  final String _accountNumber;       
+  final String _accountHolderName;   
+  double _balance;                
 
   BankAccount(this._accountNumber, this._accountHolderName, this._balance);
 
