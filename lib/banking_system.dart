@@ -1,168 +1,249 @@
-//Assignment od dart : banking system
+//Task - Bnanking System with Multiple Account Types
 
 
-//Encapsulation
+abstract class InterestBearing {
+  void addInterest();
+}
+
 abstract class BankAccount {
-  final String _accountNumber;       
-  final String _accountHolderName;   
-  double _balance;                
+  // Private fields
+  final String _accountNumber;
+  final String _accountHolderName;
+  double _balance;
+  List<String> transactionHistory = [];
 
+  // Constructor
   BankAccount(this._accountNumber, this._accountHolderName, this._balance);
 
-  // Getters and setters for encapsulation
+  // Getters
   String get accountNumber => _accountNumber;
   String get accountHolderName => _accountHolderName;
   double get balance => _balance;
 
+  // Setter
   set balance(double value) {
-    if (value >= 0) {
-      _balance = value;
-    } else {
-      print("Invalid balance value!");
-    }
+    if (value >= 0) _balance = value;
   }
 
   // Abstract methods
   void deposit(double amount);
   void withdraw(double amount);
 
-  // Method to display account information
+  // Display account info
   void displayAccountInfo() {
-    print("Account Number: $_accountNumber");
-    print("Account Holder: $_accountHolderName");
-    print("Balance: \$$_balance\n");
+    print(
+        "Account: $_accountNumber | Holder: $_accountHolderName | Balance: \$${_balance.toStringAsFixed(2)}");
+  }
+
+  // Show transaction history
+  void showTransactionHistory() {
+    print("\nTransaction History for $_accountHolderName:");
+    for (var t in transactionHistory) {
+      print("- $t");
+    }
   }
 }
 
-// Interface/abstract class for interest bearing accounts
-abstract class InterestBearing {
-  void calculateInterest();
-}
-
-// Savings Account
+// -------------------- SAVINGS ACCOUNT --------------------
 class SavingsAccount extends BankAccount implements InterestBearing {
-  static const double minBalance = 500.0;
+  static const double minBalance = 500;
   static const double interestRate = 0.02;
   int withdrawalCount = 0;
+  static const int maxWithdrawalsPerMonth = 3;
 
-  SavingsAccount(String accNo, String name, double balance)
-      : super(accNo, name, balance);
+  SavingsAccount(String accountNumber, String accountHolderName, double balance)
+      : super(accountNumber, accountHolderName, balance);
 
   @override
   void deposit(double amount) {
-    balance += amount;
-    print("Deposited \$${amount} into Savings Account");
+    if (amount > 0) {
+      _balance += amount;
+      transactionHistory.add("Deposited \$${amount.toStringAsFixed(2)}");
+      print("Deposited \$${amount.toStringAsFixed(2)} into $accountHolderName's Savings Account");
+    } else {
+      print("Invalid deposit amount!");
+    }
   }
 
   @override
   void withdraw(double amount) {
-    if (withdrawalCount >= 3) {
-      print("Withdrawal limit reached!");
+    if (withdrawalCount >= maxWithdrawalsPerMonth) {
+      print("Withdrawal limit reached for this month!");
       return;
     }
-    if (balance - amount >= minBalance) {
-      balance -= amount;
+    if (amount > 0 && _balance - amount >= minBalance) {
+      _balance -= amount;
       withdrawalCount++;
-      print("Withdrew \$${amount} from Savings Account");
+      transactionHistory.add("Withdrew \$${amount.toStringAsFixed(2)}");
+      print("Withdrew \$${amount.toStringAsFixed(2)} from $accountHolderName's Savings Account");
     } else {
-      print("Cannot withdraw! Minimum balance requirement not met.");
+      print("Cannot withdraw. Minimum balance requirement: \$${minBalance}");
     }
   }
 
   @override
-  void calculateInterest() {
-    double interest = balance * interestRate;
-    balance += interest;
-    print("Interest of \$${interest} added to Savings Account");
+  void addInterest() {
+    double interest = _balance * interestRate;
+    _balance += interest;
+    transactionHistory.add("Interest added: \$${interest.toStringAsFixed(2)}");
+    print("Interest of \$${interest.toStringAsFixed(2)} added to $accountHolderName's Savings Account");
+
+    resetWithdrawalCount();
+  }
+
+  void resetWithdrawalCount() {
+    withdrawalCount = 0;
   }
 }
 
-// Checking Account
+// -------------------- CHECKING ACCOUNT --------------------
 class CheckingAccount extends BankAccount {
-  static const double overdraftFee = 35.0;
+  static const double overdraftFee = 35;
 
-  CheckingAccount(String accNo, String name, double balance)
-      : super(accNo, name, balance);
+  CheckingAccount(String accountNumber, String accountHolderName, double balance)
+      : super(accountNumber, accountHolderName, balance);
 
   @override
   void deposit(double amount) {
-    balance += amount;
-    print("Deposited \$${amount} into Checking Account");
+    if (amount > 0) {
+      _balance += amount;
+      transactionHistory.add("Deposited \$${amount.toStringAsFixed(2)}");
+      print("Deposited \$${amount.toStringAsFixed(2)} into $accountHolderName's Checking Account");
+    } else {
+      print("Invalid deposit amount!");
+    }
   }
 
   @override
   void withdraw(double amount) {
-    balance -= amount;
-    if (balance < 0) {
-      balance -= overdraftFee;
-      print("Overdraft! Fee of \$${overdraftFee} applied.");
+    if (amount > 0) {
+      _balance -= amount;
+      transactionHistory.add("Withdrew \$${amount.toStringAsFixed(2)}");
+      if (_balance < 0) {
+        _balance -= overdraftFee;
+        transactionHistory.add("Overdraft fee applied: \$${overdraftFee.toStringAsFixed(2)}");
+        print("Overdraft! Fee of \$${overdraftFee.toStringAsFixed(2)} applied.");
+      }
+      print("Withdrew \$${amount.toStringAsFixed(2)} from $accountHolderName's Checking Account");
+    } else {
+      print("Invalid withdrawal amount!");
     }
-    print("Withdrew \$${amount} from Checking Account");
   }
 }
 
-// Premium Account
 class PremiumAccount extends BankAccount implements InterestBearing {
-  static const double minBalance = 10000.0;
+  static const double minBalance = 10000;
   static const double interestRate = 0.05;
 
-  PremiumAccount(String accNo, String name, double balance)
-      : super(accNo, name, balance);
+  PremiumAccount(String accountNumber, String accountHolderName, double balance)
+      : super(accountNumber, accountHolderName, balance);
 
   @override
   void deposit(double amount) {
-    balance += amount;
-    print("Deposited \$${amount} into Premium Account");
-  }
-
-  @override
-  void withdraw(double amount) {
-    if (balance - amount >= minBalance) {
-      balance -= amount;
-      print("Withdrew \$${amount} from Premium Account");
+    if (amount > 0) {
+      _balance += amount;
+      transactionHistory.add("Deposited \$${amount.toStringAsFixed(2)}");
+      print("Deposited \$${amount.toStringAsFixed(2)} into $accountHolderName's Premium Account");
     } else {
-      print("Minimum balance requirement not met!");
+      print("Invalid deposit amount!");
     }
   }
 
   @override
-  void calculateInterest() {
-    double interest = balance * interestRate;
-    balance += interest;
-    print("Interest of \$${interest} added to Premium Account");
+  void withdraw(double amount) {
+    if (_balance - amount >= minBalance) {
+      _balance -= amount;
+      transactionHistory.add("Withdrew \$${amount.toStringAsFixed(2)}");
+      print("Withdrew \$${amount.toStringAsFixed(2)} from $accountHolderName's Premium Account");
+    } else {
+      print("Cannot withdraw. Minimum balance required: \$${minBalance}");
+    }
+  }
+
+  @override
+  void addInterest() {
+    double interest = _balance * interestRate;
+    _balance += interest;
+    transactionHistory.add("Interest added: \$${interest.toStringAsFixed(2)}");
+    print("Interest of \$${interest.toStringAsFixed(2)} added to $accountHolderName's Premium Account");
   }
 }
 
-// Bank class
+//Added Student Account
+class StudentAccount extends BankAccount {
+  static const double maxBalance = 5000;
+
+  StudentAccount(String accountNumber, String accountHolderName, double balance)
+      : super(accountNumber, accountHolderName, balance);
+
+  @override
+  void deposit(double amount) {
+    if (_balance + amount <= maxBalance) {
+      _balance += amount;
+      transactionHistory.add("Deposited \$${amount.toStringAsFixed(2)}");
+      print("Deposited \$${amount.toStringAsFixed(2)} into $accountHolderName's Student Account");
+    } else {
+      print("Cannot exceed maximum balance of \$${maxBalance}");
+    }
+  }
+
+  @override
+  void withdraw(double amount) {
+    if (amount <= _balance) {
+      _balance -= amount;
+      transactionHistory.add("Withdrew \$${amount.toStringAsFixed(2)}");
+      print("Withdrew \$${amount.toStringAsFixed(2)} from $accountHolderName's Student Account");
+    } else {
+      print("Insufficient balance!");
+    }
+  }
+}
+
 class Bank {
   List<BankAccount> accounts = [];
 
-  void createAccount(BankAccount account) {
+  void addAccount(BankAccount account) {
     accounts.add(account);
     print("Account created for ${account.accountHolderName}");
   }
 
-  BankAccount? findAccount(String accNo) {
-    for (var account in accounts) {
-      if (account.accountNumber == accNo) {
-        return account;
+  BankAccount? findAccount(String accountNumber) {
+    try {
+      return accounts.firstWhere((a) => a.accountNumber == accountNumber);
+    } catch (e) {
+      print("Account $accountNumber not found!");
+      return null;
+    }
+  }
+
+  void transfer(String fromAccountNumber, String toAccountNumber, double amount) {
+    var from = findAccount(fromAccountNumber);
+    var to = findAccount(toAccountNumber);
+
+    if (from != null && to != null) {
+      if (amount > 0 && from.balance >= amount) {
+        from.withdraw(amount);
+        to.deposit(amount);
+        from.transactionHistory.add("Transferred \$${amount.toStringAsFixed(2)} to ${to.accountHolderName}");
+        to.transactionHistory.add("Received \$${amount.toStringAsFixed(2)} from ${from.accountHolderName}");
+        print("Transferred \$${amount.toStringAsFixed(2)} from ${from.accountHolderName} to ${to.accountHolderName}");
+      } else {
+        print("Insufficient balance for transfer!");
       }
     }
-    print("Account not found!");
-    return null;
   }
 
-  void transfer(String fromAcc, String toAcc, double amount) {
-    var sender = findAccount(fromAcc);
-    var receiver = findAccount(toAcc);
-    if (sender != null && receiver != null) {
-      sender.withdraw(amount);
-      receiver.deposit(amount);
-      print("Transferred \$${amount} from ${sender.accountHolderName} to ${receiver.accountHolderName}");
+// ...existing code...
+  void applyMonthlyInterest() {
+    for (var account in accounts) {
+      if (account is InterestBearing) {
+        (account as InterestBearing).addInterest(); // explicit cast fixes the error
+      }
     }
   }
+// ...existing code...
 
-  void generateReport() {
+  void showReport() {
     print("\n---- Bank Account Report ----");
     for (var account in accounts) {
       account.displayAccountInfo();
@@ -170,25 +251,34 @@ class Bank {
   }
 }
 
-// Main Function
+// -------------------- MAIN --------------------
 void main() {
   var bank = Bank();
 
-  var savings = SavingsAccount("S001", "Sabbu", 1000);
-  var checking = CheckingAccount("C001", "Aditi", 200);
-  var premium = PremiumAccount("P001", "sabyata", 15000);
+  var acc1 = SavingsAccount("S001", "Sabbu", 1000);
+  var acc2 = CheckingAccount("C001", "Aditi", 200);
+  var acc3 = PremiumAccount("P001", "Sabyata", 15000);
+  var acc4 = StudentAccount("ST001", "Ashree", 1000);
 
-  bank.createAccount(savings);
-  bank.createAccount(checking);
-  bank.createAccount(premium);
+  bank.addAccount(acc1);
+  bank.addAccount(acc2);
+  bank.addAccount(acc3);
+  bank.addAccount(acc4);
 
-  savings.deposit(200);
-  savings.withdraw(100);
-  savings.calculateInterest();
-
-  checking.withdraw(300);
-  premium.calculateInterest();
+  // Transactions
+  acc1.deposit(200);
+  acc1.withdraw(100);
+  acc3.addInterest();
+  acc4.deposit(4200);
+  acc4.withdraw(500);
+  acc4.deposit(1000); // Should show error
 
   bank.transfer("S001", "C001", 100);
-  bank.generateReport();
+  bank.applyMonthlyInterest();
+
+  bank.showReport();
+
+  print("\n---- Transaction Histories ----");
+  acc1.showTransactionHistory();
+  acc4.showTransactionHistory();
 }
